@@ -40,6 +40,7 @@ static const xmlChar _NODE_CAPABILITY[]						= "capability";
 
 static const xmlChar _ATTRIBUTE_APP_ID[]					= "appid";
 static const xmlChar _ATTRIBUTE_MULTIPLE_ACCOUNTS_SUPPORT[]	= "multiple-accounts-support";
+static const xmlChar _ATTRIBUTE_SERVICE_PROVIDER_ID[]		= "providerid";
 static const xmlChar _ATTRIBUTE_SECTION[]					= "section";
 static const xmlChar _ATTRIBUTE_TYPE[]						= "type";
 static const xmlChar _ATTRIBUTE_XML_LANG[]					= "xml:lang";
@@ -129,10 +130,24 @@ int _register_account_provider(xmlDocPtr docPtr, char* account_provider_app_id)
 
 			_SECURE_D("Attribute: appid - %s", attribute_app_id);
 
-			ret = account_type_set_app_id_internal(account_type_handle, (char*)attribute_app_id);
+			ret = account_type_set_app_id(account_type_handle, (char*)attribute_app_id);
 			if(ret != ACCOUNT_ERROR_NONE) {
 				_E("Failed to set the app ID.");
 				goto CATCH;
+			}
+
+			// Attribute: providerid
+			xmlChar* attribute_provider_id = xmlGetProp(cur_ptr, _ATTRIBUTE_SERVICE_PROVIDER_ID);
+			if(attribute_provider_id != NULL) {
+				ret = -1;
+				_E("Failed to get the attribute(providerid).");
+
+				_SECURE_D("Attribute: appid - %s", attribute_provider_id);
+
+				ret = account_type_set_service_provider_id(account_type_handle, (char*)attribute_provider_id);
+				if(ret != ACCOUNT_ERROR_NONE) {
+					_E("Failed to set the service provider id.");
+				}
 			}
 
 			// Attribute: multiple-accounts-support
@@ -146,13 +161,13 @@ int _register_account_provider(xmlDocPtr docPtr, char* account_provider_app_id)
 			_SECURE_D("Attribute: multiple-accounts-support - %s", multiple_accounts_support);
 
 			if((!xmlStrcmp(multiple_accounts_support, _VALUE_TRUE))) {
-				ret = account_type_set_multiple_account_support_internal(account_type_handle, true);
+				ret = account_type_set_multiple_account_support(account_type_handle, true);
 				if(ret != ACCOUNT_ERROR_NONE) {
 					_E("Failed to set the multiple accounts support.");
 					goto CATCH;
 				}
 			} else {
-				ret = account_type_set_multiple_account_support_internal(account_type_handle, false);
+				ret = account_type_set_multiple_account_support(account_type_handle, false);
 				if (ret != ACCOUNT_ERROR_NONE)
 				{
 					_E("Failed to set the multiple accounts support.");
@@ -194,15 +209,15 @@ int _register_account_provider(xmlDocPtr docPtr, char* account_provider_app_id)
 
 						_SECURE_D("Node: icon - %s", account_icon);
 
-						if (!strncmp(account_icon, "/usr/share/icons", 16)) {
-							ret = account_type_set_icon_path_internal(account_type_handle, (char*)account_icon);
+						if (!strncmp((const char*)account_icon, "/usr/share/icons", 16)) {
+							ret = account_type_set_icon_path(account_type_handle, (char*)account_icon);
 							if(ret != ACCOUNT_ERROR_NONE) {
 								_E("Failed to set the icon path.");
 								goto CATCH;
 							}
 						} else {
-							if (!strcmp(attribute_app_id, "com.samsung.samsungaccount")) {
-								char *icon_path = g_strdup_printf("%s%s", "/usr/apps/com.samsung.samsungaccount/shared/res/", (char*)account_icon);
+							if (!strcmp((const char*)attribute_app_id, "com.samsung.samsungaccount")) {
+								char *icon_path = g_strdup_printf("%s%s", "/usr/apps/com.samsung.samsungaccount/shared/res/", (const char*)account_icon);
 								if(icon_path == NULL) {
 									_E("icon_path is NULL.");
 									free(resource_path);
@@ -210,14 +225,14 @@ int _register_account_provider(xmlDocPtr docPtr, char* account_provider_app_id)
 								}
 
 								_D("icon_path[%s]", icon_path);
-								ret = account_type_set_icon_path_internal(account_type_handle, icon_path);
+								ret = account_type_set_icon_path(account_type_handle, icon_path);
 								if(ret != ACCOUNT_ERROR_NONE) {
 									_E("Failed to set the icon path.");
 									g_free(icon_path);
 									goto CATCH;
 								}
 								g_free(icon_path);
-							} else if (!strcmp(attribute_app_id, "com.samsung.tizenaccount")) {
+							} else if (!strcmp((const char*)attribute_app_id, "com.samsung.tizenaccount")) {
 								char *icon_path = g_strdup_printf("%s%s", "/usr/apps/com.samsung.tizenaccount/shared/res/", (char*)account_icon);
 								if(icon_path == NULL) {
 									_E("icon_path is NULL.");
@@ -226,7 +241,7 @@ int _register_account_provider(xmlDocPtr docPtr, char* account_provider_app_id)
 								}
 
 								_D("icon_path[%s]", icon_path);
-								ret = account_type_set_icon_path_internal(account_type_handle, icon_path);
+								ret = account_type_set_icon_path(account_type_handle, icon_path);
 								if(ret != ACCOUNT_ERROR_NONE) {
 									_E("Failed to set the icon path.");
 									g_free(icon_path);
@@ -236,7 +251,7 @@ int _register_account_provider(xmlDocPtr docPtr, char* account_provider_app_id)
 							} else {
 								ret = app_manager_get_shared_resource_path((char*)attribute_app_id, &resource_path);
 								if(ret != APP_MANAGER_ERROR_NONE) {
-									_E("Failed to get the shared resource path.");
+									_E("Failed to get the shared resource path. app_manager ret=[%d]", ret);
 									goto CATCH;
 								}
 
@@ -250,7 +265,7 @@ int _register_account_provider(xmlDocPtr docPtr, char* account_provider_app_id)
 								free(resource_path);
 
 								_D("icon_path[%s]", icon_path);
-								ret = account_type_set_icon_path_internal(account_type_handle, icon_path);
+								ret = account_type_set_icon_path(account_type_handle, icon_path);
 								if(ret != ACCOUNT_ERROR_NONE) {
 									_E("Failed to set the icon path.");
 									g_free(icon_path);
@@ -269,14 +284,14 @@ int _register_account_provider(xmlDocPtr docPtr, char* account_provider_app_id)
 
 						_SECURE_D("Node: icon (small) - %s",  account_small_icon);
 
-						if (!strncmp(account_small_icon, "/usr/share/icons", 16) || !strcmp(account_small_icon, "/usr/apps/com.samsung.tizenaccount/shared/res/TizenAccount.png")) {
-							ret = account_type_set_small_icon_path_internal(account_type_handle, (char*)account_small_icon);
+						if (!strncmp((const char*)account_small_icon, "/usr/share/icons", 16) || !strcmp((const char*)account_small_icon, "/usr/apps/com.samsung.tizenaccount/shared/res/TizenAccount.png")) {
+							ret = account_type_set_small_icon_path(account_type_handle, (char*)account_small_icon);
 							if(ret != ACCOUNT_ERROR_NONE) {
 								_E("Failed to set the small icon path.");
 								goto CATCH;
 							}
 						} else {
-							if (!strcmp(attribute_app_id, "com.samsung.samsungaccount")) {
+							if (!strcmp((const char*)attribute_app_id, "com.samsung.samsungaccount")) {
 								char *small_icon_path = g_strdup_printf("%s%s", "/usr/apps/com.samsung.samsungaccount/shared/res/", (char*)account_small_icon);
 								if(small_icon_path == NULL) {
 									_E("small_icon_path is NULL.");
@@ -285,7 +300,7 @@ int _register_account_provider(xmlDocPtr docPtr, char* account_provider_app_id)
 								}
 
 								_D("small_icon_path[%s]", small_icon_path);
-								ret = account_type_set_small_icon_path_internal(account_type_handle, (char*)small_icon_path);
+								ret = account_type_set_small_icon_path(account_type_handle, (char*)small_icon_path);
 								if(ret != ACCOUNT_ERROR_NONE) {
 									_E("Failed to set the small icon path.");
 									g_free(small_icon_path);
@@ -309,7 +324,7 @@ int _register_account_provider(xmlDocPtr docPtr, char* account_provider_app_id)
 								free(resource_path);
 
 								_D("small_icon_path[%s]", small_icon_path);
-								ret = account_type_set_small_icon_path_internal(account_type_handle, (char*)small_icon_path);
+								ret = account_type_set_small_icon_path(account_type_handle, (char*)small_icon_path);
 								if(ret != ACCOUNT_ERROR_NONE) {
 									_E("Failed to set the small icon path.");
 									g_free(small_icon_path);
@@ -371,7 +386,7 @@ int _register_account_provider(xmlDocPtr docPtr, char* account_provider_app_id)
 
 						_SECURE_D("Node: label - %s", xml_label);
 
-						ret = account_type_set_label_internal(account_type_handle, (char*)xml_label, converted_lang);
+						ret = account_type_set_label(account_type_handle, (char*)xml_label, converted_lang);
 						if(ret != ACCOUNT_ERROR_NONE) {
 							g_free(converted_lang);
 							_E("[%d]Failed to set the display name.", ret);
@@ -389,7 +404,7 @@ int _register_account_provider(xmlDocPtr docPtr, char* account_provider_app_id)
 
 						_SECURE_D("Node: label - %s",  xml_label);
 
-						ret = account_type_set_label_internal(account_type_handle, (char*)xml_label, _DEFAULT_LOCALE);
+						ret = account_type_set_label(account_type_handle, (char*)xml_label, _DEFAULT_LOCALE);
 						if(ret != ACCOUNT_ERROR_NONE) {
 							_E("[%d]Failed to set the display name.", ret);
 							goto CATCH;
@@ -409,7 +424,7 @@ int _register_account_provider(xmlDocPtr docPtr, char* account_provider_app_id)
 
 					_SECURE_D("Node: capability - %s",  xml_capability);
 
-					ret = account_type_set_provider_feature_internal(account_type_handle, (char*)xml_capability);
+					ret = account_type_set_provider_feature(account_type_handle, (char*)xml_capability);
 					if(ret != ACCOUNT_ERROR_NONE) {
 						_E("[%d]Failed to set the capability.", ret);
 						goto CATCH;
@@ -428,9 +443,9 @@ int _register_account_provider(xmlDocPtr docPtr, char* account_provider_app_id)
 	// Insert the account type to the account DB
 	{
 		int account_type_db_id = 0;
-		ret = account_type_insert_to_db_internal(account_type_handle, &account_type_db_id);
+		ret = account_type_insert_to_db_offline(account_type_handle, &account_type_db_id);
 		if(ret != ACCOUNT_ERROR_NONE) {
-			_E("[%d]Failed to perform account_type_insert_to_db_internal().", ret);
+			_E("[%d]Failed to perform account_type_insert_to_db().", ret);
 			goto CATCH;
 		}
 	}
@@ -479,9 +494,9 @@ int _unregister_account_provider(pkgmgrinfo_appinfo_h package_info_handle, void*
 		goto CATCH;
 	}
 
-	ret = account_type_delete_by_app_id_internal((char*)app_id);
+	ret = account_type_delete_by_app_id_offline((char*)app_id);
 	if(ret != ACCOUNT_ERROR_NONE) {
-		_E("Failed to perform account_type_delete_by_app_id_internal().");
+		_E("Failed to perform account_type_delete_by_app_id().");
 		goto CATCH;
 	}
 
@@ -509,7 +524,7 @@ int _on_package_app_list_received_cb(pkgmgrinfo_appinfo_h handle, void *user_dat
 	int ret = account_connect();
 	retvm_if(ret != ACCOUNT_ERROR_NONE, ret, "[%d]Failed to account_connect().", ret);
 
-	ret = account_type_delete_by_app_id_internal((char*)app_id);
+	ret = account_type_delete_by_app_id_offline((char*)app_id);
 	if(ret == ACCOUNT_ERROR_NONE) {
 		_D("PKGMGR_PARSER_PLUGIN_PRE_UPGRADE: app ID - %s", app_id);
 		strncpy(__old_account_provider_app_id, app_id, 128);
