@@ -2,7 +2,7 @@
 
 prefix=@PREFIX@
 exec_prefix=/usr
-libdir=/usr/etc/package-manager/parserlib
+libdir=/etc/package-manager/parserlib
 includedir=
 
 Name: @PC_NAME@

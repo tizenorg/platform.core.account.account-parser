@@ -4,6 +4,7 @@ PROJECT(account C)
 INCLUDE(FindPkgConfig)
 pkg_check_modules(account_pkgs REQUIRED
 	dlog
+	capi-base-common
 	libxml-2.0
 	pkgmgr-info
 	glib-2.0
@@ -32,10 +33,13 @@ SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EXTRA_CFLAGS} ${extapi}")
 ## SET LINKER FLAGS
 SET(CMAKE_SHARED_LINKER_FLAGS "-Wl,--as-needed")
 
+## SET SYSCONFDIR
+#add_definitions("-DSYSCONFDIR=\"${SYSCONFDIR}\"")
+
 ## Create Library
 ADD_LIBRARY (${PROJECT_NAME} SHARED ${SRCS})
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} ${account_pkgs_LDFLAGS} )
 
 #CONFIGURE_FILE(account-parser.pc.in ${CMAKE_SOURCE_DIR}/account-parser.pc @ONLY)
 #INSTALL(FILES ${CMAKE_SOURCE_DIR}/account-parser.pc DESTINATION lib/pkgconfig)
-INSTALL(TARGETS ${PROJECT_NAME} DESTINATION "etc/package-manager/parserlib")
+INSTALL(TARGETS ${PROJECT_NAME} DESTINATION ${SYSCONFDIR}/package-manager/parserlib)
