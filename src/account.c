@@ -85,10 +85,9 @@ int _register_account_provider(xmlDocPtr docPtr, char* account_provider_app_id)
 	ENTER();
 	_D("Registering the Account Provider.");
 
-	int ret = account_connect();
-	retvm_if(ret != ACCOUNT_ERROR_NONE, ret, "[%d]A system error has occurred.", ret);
+	int ret = ACCOUNT_ERROR_NONE;
 
-	int ret2 = 0;
+	int ret2 = ACCOUNT_ERROR_NONE;
 
 	account_type_h account_type_handle = NULL;
 	ret = account_type_create(&account_type_handle);
@@ -456,20 +455,11 @@ int _register_account_provider(xmlDocPtr docPtr, char* account_provider_app_id)
 		goto CATCH;
 	}
 
-	ret = account_disconnect();
-	if(ret != ACCOUNT_ERROR_NONE) {
-		_E("[%d]Failed to perform account_disconnect().", ret);
-		goto CATCH;
-	}
-
 	return 0;
 
 CATCH:
 	ret2 = account_type_destroy(account_type_handle);
 	retvm_if(ret2 != ACCOUNT_ERROR_NONE, ret2, "[%d]Failed to perform account_type_destroy().", ret2);
-
-	ret2 = account_disconnect();
-	retvm_if(ret2 != ACCOUNT_ERROR_NONE, ret2, "[%d]Failed to perform account_disconnect().", ret2);
 
 	return ret;
 }
@@ -483,10 +473,9 @@ int _unregister_account_provider(pkgmgrinfo_appinfo_h package_info_handle, void*
 	pkgmgrinfo_appinfo_get_appid(package_info_handle, &app_id);
 	_D("appid : %s", app_id);
 
-	int ret = account_connect();
-	retvm_if(ret != ACCOUNT_ERROR_NONE, ret, "[%d]Failed to account_connect().", ret);
+	int ret = ACCOUNT_ERROR_NONE;
 
-	int ret2 = 0;
+	int ret2 = ACCOUNT_ERROR_NONE;
 
 	ret = account_delete_from_db_by_package_name_without_permission((char*)app_id);
 	if((ret != ACCOUNT_ERROR_NONE) && (ret !=  ACCOUNT_ERROR_RECORD_NOT_FOUND)) {
@@ -500,15 +489,9 @@ int _unregister_account_provider(pkgmgrinfo_appinfo_h package_info_handle, void*
 		goto CATCH;
 	}
 
-	ret = account_disconnect();
-	retvm_if(ret != ACCOUNT_ERROR_NONE, ret, "[%d]Failed to account_disconnect().", ret);
-
 	return PMINFO_R_OK;
 
 CATCH:
-	ret2 = account_disconnect();
-	retvm_if(ret2 != ACCOUNT_ERROR_NONE, ret, "[%d]Failed to account_disconnect().", ret2);
-
 	return ret;
 }
 
@@ -521,19 +504,13 @@ int _on_package_app_list_received_cb(pkgmgrinfo_appinfo_h handle, void *user_dat
 	pkgmgrinfo_appinfo_get_appid(handle, &app_id);
 	_D("appid : %s", app_id);
 
-	int ret = account_connect();
-	retvm_if(ret != ACCOUNT_ERROR_NONE, ret, "[%d]Failed to account_connect().", ret);
-
-	ret = account_type_delete_by_app_id_offline((char*)app_id);
+	int ret = account_type_delete_by_app_id_offline((char*)app_id);
 	if(ret == ACCOUNT_ERROR_NONE) {
 		_D("PKGMGR_PARSER_PLUGIN_PRE_UPGRADE: app ID - %s", app_id);
 		strncpy(__old_account_provider_app_id, app_id, 128);
 
 		return 0;
 	}
-
-	ret = account_disconnect();
-	retvm_if(ret != ACCOUNT_ERROR_NONE, ret, "[%d]Failed to account_disconnect().", ret);
 
 	return 0;
 }
@@ -610,9 +587,6 @@ int PKGMGR_PARSER_PLUGIN_UPGRADE(xmlDocPtr docPtr, const char* packageId)
 	int ret = _register_account_provider(docPtr, account_provider_app_id);
 	retvm_if(ret != 0, ret, "[%d]Failed to register the account provider.", ret);
 
-	ret = account_connect();
-	retvm_if(ret != ACCOUNT_ERROR_NONE, ret, "[%d]Failed to perfrom account_connect().", ret);
-
 	int ret2 = 0;
 
 	ret = account_query_account_by_package_name(_on_account_received_cb, __old_account_provider_app_id, (void*)account_provider_app_id);
@@ -621,14 +595,8 @@ int PKGMGR_PARSER_PLUGIN_UPGRADE(xmlDocPtr docPtr, const char* packageId)
 		goto CATCH;
 	}
 
-	ret = account_disconnect();
-	retvm_if(ret != ACCOUNT_ERROR_NONE, ret, "[%d]Failed to perfrom account_disconnect().", ret);
-
 	return 0;
 
 CATCH:
-	ret2 = account_disconnect();
-	retvm_if(ret2 != ACCOUNT_ERROR_NONE, ret2, "[%d]Failed to perfrom account_disconnect().", ret2);
-
 	return ret;
 }
