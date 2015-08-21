@@ -442,7 +442,12 @@ int _register_account_provider(xmlDocPtr docPtr, char* account_provider_app_id)
 	// Insert the account type to the account DB
 	{
 		int account_type_db_id = 0;
-		ret = account_type_insert_to_db_offline(account_type_handle, &account_type_db_id);
+		if (getuid() == 0) {
+			ret = account_type_insert_to_db_offline(account_type_handle, &account_type_db_id);
+		} else {
+			ret = account_type_insert_to_db(account_type_handle, &account_type_db_id);
+		}
+
 		if(ret != ACCOUNT_ERROR_NONE) {
 			_E("[%d]Failed to perform account_type_insert_to_db().", ret);
 			goto CATCH;
@@ -475,15 +480,18 @@ int _unregister_account_provider(pkgmgrinfo_appinfo_h package_info_handle, void*
 
 	int ret = ACCOUNT_ERROR_NONE;
 
-	int ret2 = ACCOUNT_ERROR_NONE;
-
 	ret = account_delete_from_db_by_package_name_without_permission((char*)app_id);
 	if((ret != ACCOUNT_ERROR_NONE) && (ret !=  ACCOUNT_ERROR_RECORD_NOT_FOUND)) {
 		_E("Failed to perform account_delete_from_db_by_package_name_without_permission().");
 		goto CATCH;
 	}
 
-	ret = account_type_delete_by_app_id_offline((char*)app_id);
+	if (getuid() == 0) {
+		ret = account_type_delete_by_app_id_offline((char*)app_id);
+	} else {
+		ret = account_type_delete_by_app_id((char*)app_id);
+	}
+
 	if(ret != ACCOUNT_ERROR_NONE) {
 		_E("Failed to perform account_type_delete_by_app_id().");
 		goto CATCH;
@@ -500,11 +508,17 @@ int _on_package_app_list_received_cb(pkgmgrinfo_appinfo_h handle, void *user_dat
 	ENTER();
 	_D("Pkgmgr parser plugin pre upgrade.");
 
+	int ret = ACCOUNT_ERROR_NONE;
 	char* app_id = NULL;
 	pkgmgrinfo_appinfo_get_appid(handle, &app_id);
 	_D("appid : %s", app_id);
 
-	int ret = account_type_delete_by_app_id_offline((char*)app_id);
+	if (getuid() == 0) {
+		ret = account_type_delete_by_app_id_offline((char*)app_id);
+	} else {
+		ret = account_type_delete_by_app_id((char*)app_id);
+	}
+
 	if(ret == ACCOUNT_ERROR_NONE) {
 		_D("PKGMGR_PARSER_PLUGIN_PRE_UPGRADE: app ID - %s", app_id);
 		strncpy(__old_account_provider_app_id, app_id, 128);
@@ -586,8 +600,6 @@ int PKGMGR_PARSER_PLUGIN_UPGRADE(xmlDocPtr docPtr, const char* packageId)
 	char* account_provider_app_id = NULL;
 	int ret = _register_account_provider(docPtr, account_provider_app_id);
 	retvm_if(ret != 0, ret, "[%d]Failed to register the account provider.", ret);
-
-	int ret2 = 0;
 
 	ret = account_query_account_by_package_name(_on_account_received_cb, __old_account_provider_app_id, (void*)account_provider_app_id);
 	if((ret != ACCOUNT_ERROR_NONE) && (ret != ACCOUNT_ERROR_RECORD_NOT_FOUND)) {
