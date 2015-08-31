@@ -1,6 +1,6 @@
 Name:		account-parser
 Summary:	Account Parser Library
-Version:	0.0.11
+Version:	0.1.0
 Release:	0
 Group:		Social & Content/Other
 License:	Apache-2.0
@@ -14,6 +14,7 @@ BuildRequires:  pkgconfig(libxml-2.0)
 BuildRequires:  pkgconfig(glib-2.0)
 BuildRequires:  pkgconfig(pkgmgr)
 BuildRequires:  pkgconfig(pkgmgr-info)
+BuildRequires:  pkgconfig(libtzplatform-config)
 BuildRequires:  pkgconfig(capi-appfw-app-manager)
 
 %description
