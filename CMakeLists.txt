@@ -10,6 +10,7 @@ pkg_check_modules(account_pkgs REQUIRED
 	glib-2.0
 	accounts-svc
 	capi-appfw-app-manager
+	libtzplatform-config
 )
 
 FOREACH(flag ${account_pkgs_CFLAGS})

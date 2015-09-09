@@ -24,6 +24,7 @@
 #include <account_internal.h>
 #include <pkgmgr-info.h>
 #include <app_manager.h>
+#include <tzplatform_config.h>
 
 #include "account-dlog.h"
 
@@ -32,6 +33,8 @@
 #define EXPORT_API __attribute__((visibility("default")))
 #endif
 
+#define OWNER_ROOT 0
+#define GLOBAL_USER tzplatform_getuid(TZ_SYS_GLOBALAPP_USER)
 
 static const xmlChar _NODE_ACCOUNT_PROVIDER[]				= "account-provider";
 static const xmlChar _NODE_ICON[]							= "icon";
@@ -549,11 +552,23 @@ int PKGMGR_PARSER_PLUGIN_UNINSTALL(xmlDocPtr docPtr, const char* packageId)
 	_D("PKGMGR_PARSER_PLUGIN_UNINSTALL");
 
 	pkgmgrinfo_pkginfo_h package_info_handle = NULL;
+	int ret = -1;
+	uid_t uid = 0;
 
-	int ret = pkgmgrinfo_pkginfo_get_pkginfo(packageId, &package_info_handle);
+	uid = getuid();
+	if (uid == OWNER_ROOT || uid == GLOBAL_USER) {
+		ret = pkgmgrinfo_pkginfo_get_pkginfo(packageId, &package_info_handle);
+	} else {
+		ret = pkgmgrinfo_pkginfo_get_usr_pkginfo(packageId, uid, &package_info_handle);
+	}
 	retvm_if(ret != PMINFO_R_OK, ret, "[%d]Failed to pkgmgrinfo_pkginfo_get_pkginfo().", ret);
 
-	ret = pkgmgrinfo_appinfo_get_list(package_info_handle, PMINFO_UI_APP, _unregister_account_provider, NULL);
+	if (uid == OWNER_ROOT || uid == GLOBAL_USER) {
+        ret = pkgmgrinfo_appinfo_get_list(package_info_handle, PMINFO_ALL_APP, _unregister_account_provider, NULL);
+    } else {
+        ret = pkgmgrinfo_appinfo_get_usr_list(package_info_handle, PMINFO_ALL_APP, _unregister_account_provider, NULL, uid);
+    }
+
 	if(ret != PMINFO_R_OK) {
 		_D("Failed to get the application information list.");
 		pkgmgrinfo_pkginfo_destroy_pkginfo(package_info_handle);
@@ -574,11 +589,23 @@ int PKGMGR_PARSER_PLUGIN_PRE_UPGRADE(const char* packageId)
 	memset(__old_account_provider_app_id, 0x00, sizeof(__old_account_provider_app_id));
 
 	pkgmgrinfo_pkginfo_h package_info_handle = NULL;
+	int ret = -1;
+	uid_t uid = 0;
 
-	int ret = pkgmgrinfo_pkginfo_get_pkginfo(packageId, &package_info_handle);
+	uid = getuid();
+	if (uid == OWNER_ROOT || uid == GLOBAL_USER) {
+		ret = pkgmgrinfo_pkginfo_get_pkginfo(packageId, &package_info_handle);
+	} else {
+		ret = pkgmgrinfo_pkginfo_get_usr_pkginfo(packageId, uid, &package_info_handle);
+	}
 	retvm_if(ret != PMINFO_R_OK, ret, "[%d]Failed to pkgmgrinfo_pkginfo_get_pkginfo().", ret);
 
-	ret = pkgmgrinfo_appinfo_get_list(package_info_handle, PMINFO_UI_APP, _on_package_app_list_received_cb, NULL);
+	if (uid == OWNER_ROOT || uid == GLOBAL_USER) {
+        ret = pkgmgrinfo_appinfo_get_list(package_info_handle, PMINFO_ALL_APP, _on_package_app_list_received_cb, NULL);
+    } else {
+        ret = pkgmgrinfo_appinfo_get_usr_list(package_info_handle, PMINFO_ALL_APP, _on_package_app_list_received_cb, NULL, uid);
+    }
+
 	if(ret != PMINFO_R_OK) {
 		_D("Failed to get the application information list.");
 		pkgmgrinfo_pkginfo_destroy_pkginfo(package_info_handle);
