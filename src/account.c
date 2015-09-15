@@ -483,9 +483,9 @@ int _unregister_account_provider(pkgmgrinfo_appinfo_h package_info_handle, void*
 
 	int ret = ACCOUNT_ERROR_NONE;
 
-	ret = account_delete_from_db_by_package_name_without_permission((char*)app_id);
+	ret = account_delete_from_db_by_package_name_offline((char*)app_id);
 	if((ret != ACCOUNT_ERROR_NONE) && (ret !=  ACCOUNT_ERROR_RECORD_NOT_FOUND)) {
-		_E("Failed to perform account_delete_from_db_by_package_name_without_permission().");
+		_E("Failed to perform account_delete_from_db_by_package_name_offline().");
 		goto CATCH;
 	}
 
