@@ -1,6 +1,6 @@
 Name:		account-parser
 Summary:	Account Parser Library
-Version:	0.0.13
+Version:	0.1.0
 Release:	0
 Group:		Social & Content/Other
 License:	Apache-2.0

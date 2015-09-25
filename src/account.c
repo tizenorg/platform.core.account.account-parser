@@ -445,7 +445,9 @@ int _register_account_provider(xmlDocPtr docPtr, char* account_provider_app_id)
 	// Insert the account type to the account DB
 	{
 		int account_type_db_id = 0;
-		if (getuid() == 0) {
+		uid_t uid = -1;
+		uid = getuid();
+		if (uid == OWNER_ROOT || uid == GLOBAL_USER) {
 			ret = account_type_insert_to_db_offline(account_type_handle, &account_type_db_id);
 		} else {
 			ret = account_type_insert_to_db(account_type_handle, &account_type_db_id);
@@ -482,14 +484,21 @@ int _unregister_account_provider(pkgmgrinfo_appinfo_h package_info_handle, void*
 	_D("appid : %s", app_id);
 
 	int ret = ACCOUNT_ERROR_NONE;
+	uid_t uid = -1;
+	uid = getuid();
 
-	ret = account_delete_from_db_by_package_name_offline((char*)app_id);
+	//To Do : delete accounts of this app from all user db.
+	if (uid == OWNER_ROOT || uid == GLOBAL_USER) {
+		ret = account_delete_from_db_by_package_name_offline((char*)app_id);
+	}else {
+		ret = account_delete_from_db_by_package_name((char*)app_id);
+	}
 	if((ret != ACCOUNT_ERROR_NONE) && (ret !=  ACCOUNT_ERROR_RECORD_NOT_FOUND)) {
 		_E("Failed to perform account_delete_from_db_by_package_name_offline().");
 		goto CATCH;
 	}
 
-	if (getuid() == 0) {
+	if (uid == OWNER_ROOT || uid == GLOBAL_USER) {
 		ret = account_type_delete_by_app_id_offline((char*)app_id);
 	} else {
 		ret = account_type_delete_by_app_id((char*)app_id);
@@ -513,10 +522,12 @@ int _on_package_app_list_received_cb(pkgmgrinfo_appinfo_h handle, void *user_dat
 
 	int ret = ACCOUNT_ERROR_NONE;
 	char* app_id = NULL;
+	uid_t uid = -1;
 	pkgmgrinfo_appinfo_get_appid(handle, &app_id);
 	_D("appid : %s", app_id);
 
-	if (getuid() == 0) {
+	uid = getuid();
+	if (uid == OWNER_ROOT || uid == GLOBAL_USER) {
 		ret = account_type_delete_by_app_id_offline((char*)app_id);
 	} else {
 		ret = account_type_delete_by_app_id((char*)app_id);
