@@ -7,6 +7,7 @@ pkg_check_modules(account_pkgs REQUIRED
 	capi-base-common
 	libxml-2.0
 	pkgmgr-info
+	pkgmgr-installer
 	glib-2.0
 	accounts-svc
 	capi-appfw-app-manager

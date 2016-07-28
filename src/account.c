@@ -23,6 +23,7 @@
 #include <account-types.h>
 #include <account_internal.h>
 #include <pkgmgr-info.h>
+#include <pkgmgr_installer_info.h>
 #include <app_manager.h>
 #include <tzplatform_config.h>
 
@@ -446,7 +447,11 @@ int _register_account_provider(xmlDocPtr docPtr, char* account_provider_app_id)
 	{
 		int account_type_db_id = 0;
 		uid_t uid = -1;
-		uid = getuid();
+		if (pkgmgr_installer_info_get_target_uid(&uid) < 0) {
+			_E("pkgmgr_installer_info_get_target_uid() fail");
+			goto CATCH;
+		}
+
 		if (uid == OWNER_ROOT || uid == GLOBAL_USER) {
 			ret = account_type_insert_to_db_offline(account_type_handle, &account_type_db_id);
 		} else {
@@ -485,7 +490,10 @@ int _unregister_account_provider(pkgmgrinfo_appinfo_h package_info_handle, void*
 
 	int ret = ACCOUNT_ERROR_NONE;
 	uid_t uid = -1;
-	uid = getuid();
+	if (pkgmgr_installer_info_get_target_uid(&uid) < 0) {
+		_E("pkgmgr_installer_info_get_target_uid() fail");
+		goto CATCH;
+	}
 
 	//To Do : delete accounts of this app from all user db.
 	if (uid == OWNER_ROOT || uid == GLOBAL_USER) {
@@ -526,7 +534,11 @@ int _on_package_app_list_received_cb(pkgmgrinfo_appinfo_h handle, void *user_dat
 	pkgmgrinfo_appinfo_get_appid(handle, &app_id);
 	_D("appid : %s", app_id);
 
-	uid = getuid();
+	if (pkgmgr_installer_info_get_target_uid(&uid) < 0) {
+		_E("pkgmgr_installer_info_get_target_uid() fail");
+		return -1;
+	}
+
 	if (uid == OWNER_ROOT || uid == GLOBAL_USER) {
 		ret = account_type_delete_by_app_id_offline((char*)app_id);
 	} else {
@@ -566,7 +578,11 @@ int PKGMGR_PARSER_PLUGIN_UNINSTALL(xmlDocPtr docPtr, const char* packageId)
 	int ret = -1;
 	uid_t uid = 0;
 
-	uid = getuid();
+	if (pkgmgr_installer_info_get_target_uid(&uid) < 0) {
+		_E("pkgmgr_installer_info_get_target_uid() fail");
+		return -1;
+	}
+
 	if (uid == OWNER_ROOT || uid == GLOBAL_USER) {
 		ret = pkgmgrinfo_pkginfo_get_pkginfo(packageId, &package_info_handle);
 	} else {
@@ -603,7 +619,11 @@ int PKGMGR_PARSER_PLUGIN_PRE_UPGRADE(const char* packageId)
 	int ret = -1;
 	uid_t uid = 0;
 
-	uid = getuid();
+	if (pkgmgr_installer_info_get_target_uid(&uid) < 0) {
+		_E("pkgmgr_installer_info_get_target_uid() fail");
+		return -1;
+	}
+
 	if (uid == OWNER_ROOT || uid == GLOBAL_USER) {
 		ret = pkgmgrinfo_pkginfo_get_pkginfo(packageId, &package_info_handle);
 	} else {
